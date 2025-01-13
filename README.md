@@ -29,6 +29,10 @@
 
 Приложите скриншот входящих правил «Группы безопасности» в ЛК Yandex Cloud .
 
+## Ответ на задание 1
+
+1.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-1-1.png)
+
 ------
 
 ### Задание 2
@@ -45,6 +49,146 @@ variable "each_vm" {
 5. Используйте функцию file в local-переменной для считывания ключа ~/.ssh/id_rsa.pub и его последующего использования в блоке metadata, взятому из ДЗ 2.
 6. Инициализируйте проект, выполните код.
 
+## Ответ на задание 2
+
+1.  count-vm.tf
+    ```
+    data "yandex_compute_image" "ubuntu" {
+      family = "${var.vm_os_family}"
+    }
+
+    resource "yandex_compute_instance" "web" {
+      count = 2
+      name        = "web-${count.index + 1}"
+      hostname    = "web-${count.index + 1}"
+      platform_id = var.platform_id.pi1
+
+      resources {
+        cores         = var.vms_resurces.vm_web_resources.core
+        memory        = var.vms_resurces.vm_web_resources.memory
+        core_fraction = var.vms_resurces.vm_web_resources.core_fraction
+      }
+
+      boot_disk {
+        initialize_params {
+          image_id = data.yandex_compute_image.ubuntu.image_id
+        }
+      }
+
+        scheduling_policy {
+        preemptible = var.preemptible.yes
+      }
+
+      network_interface {
+        subnet_id = yandex_vpc_subnet.develop.id
+        security_group_ids = [yandex_vpc_security_group.example.id]
+        nat = var.nat.yes
+      }
+
+      metadata = local.metadata
+  
+      allow_stopping_for_update = var.stop_vm.yes
+
+      depends_on = [yandex_compute_instance.platform2]
+    }
+    ```
+2.  for_each-vm.tf
+    ```
+    resource "yandex_compute_instance" "platform2" {
+      for_each = {
+        "0" = "main"
+        "1" = "replica"
+      }
+      name        = "${var.each_vm[each.key]["vm_name"]}${each.value}"
+      hostname    = "${var.each_vm[each.key]["vm_name"]}${each.value}"
+      platform_id = var.platform_id.pi1
+      resources {
+        cores         = "${var.each_vm[each.key]["cpu"]}"
+        memory        = "${var.each_vm[each.key]["ram"]}"
+        core_fraction = "${var.each_vm[each.key]["core_fraction"]}"
+      }
+      boot_disk {
+        initialize_params {
+          image_id = data.yandex_compute_image.ubuntu.image_id
+          size   = "${var.each_vm[each.key]["disk_volume"]}"
+        }
+      }
+
+      scheduling_policy {
+        preemptible = var.preemptible.yes
+      }
+
+      network_interface {
+        subnet_id = yandex_vpc_subnet.develop.id
+        nat = var.nat.yes
+      }
+
+      metadata = local.metadata
+
+      allow_stopping_for_update = var.stop_vm.yes
+    }
+    ```
+3.  local.tf
+    ```
+    locals {
+        metadata = {
+            "serial-port-enable" = "1"
+            "ssh-keys"           = "${var.ssh_username}:${file(var.vms_ssh_root_key)}"
+        }
+    }
+    ```
+4.  variables.tf
+    ```
+    variable "vms_ssh_root_key" {
+      description = "Путь к публичному SSH ключу"
+      type        = string
+      default     = "/home/vlad/.ssh/id_ed25519.pub"
+    }
+
+    variable "ssh_username" {
+      description = "Имя пользователя для SSH ключей"
+      type        = string
+      default     = "ubuntu"
+    }
+
+    variable "vms_resurces" {
+      description = "Ресурсы VM web"
+      type        = map(number)
+      default = {
+        core           = 2
+        memory         = 1
+        core_fraction  = 5
+      }
+    }
+
+    variable "each_vm" {
+      description = "Ресурсы VM db"
+      type        = list(object({
+        vm_name = string
+        cpu  = number
+        ram  = number
+        core_fraction = number
+        disk_volume = number
+      }))
+      efault     = [{
+        vm_name = ""
+        cpu = 2
+        ram = 2
+        core_fraction = 20
+        disk_volume = 10
+      },
+      {
+        vm_name = ""
+        cpu = 2
+        ram = 1
+        core_fraction = 5
+        disk_volume = 5
+      }
+      ]
+    }
+    ```
+5. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-2-1.png)
+
 ------
 
 ### Задание 3
@@ -52,6 +196,55 @@ variable "each_vm" {
 1. Создайте 3 одинаковых виртуальных диска размером 1 Гб с помощью ресурса yandex_compute_disk и мета-аргумента count в файле **disk_vm.tf** .
 2. Создайте в том же файле **одиночную**(использовать count или for_each запрещено из-за задания №4) ВМ c именем "storage"  . Используйте блок **dynamic secondary_disk{..}** и мета-аргумент for_each для подключения созданных вами дополнительных дисков.
 
+## Ответ на задание 3
+
+1.  disc_vm.tf
+    ```
+    resource "yandex_compute_disk" "additional_disk" {
+      count = 3
+
+      name = "disk-${count.index + 1}"
+      size = 1 
+
+      type = "network-hdd"
+    }
+
+    resource "yandex_compute_instance" "storage" {
+      name        = "storage"
+      hostname    = "storage"
+      platform_id = var.platform_id.pi1
+
+      resources {
+        cores         = var.vms_resurces.core
+        memory        = var.vms_resurces.memory
+        core_fraction = var.vms_resurces.core_fraction
+      }
+
+      boot_disk {
+        initialize_params {
+          image_id = data.yandex_compute_image.ubuntu.image_id
+        }
+      }
+
+      network_interface {
+        subnet_id = yandex_vpc_subnet.develop.id
+        security_group_ids = [yandex_vpc_security_group.example.id]
+        nat = var.nat.yes
+      }
+
+      dynamic "secondary_disk" {
+        for_each = yandex_compute_disk.additional_disk 
+
+        content {
+          disk_id     = secondary_disk.value.id
+        }
+      }
+      metadata = local.metadata
+
+      allow_stopping_for_update = var.stop_vm.yes
+    }
+    ```
+2. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-3-1.png)
 ------
 
 ### Задание 4
@@ -80,6 +273,41 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
 Для общего зачёта создайте в вашем GitHub-репозитории новую ветку terraform-03. Закоммитьте в эту ветку свой финальный код проекта, пришлите ссылку на коммит.   
 **Удалите все созданные ресурсы**.
 
+## Ответ на задание 4
+1.  ansible.tf
+    ```
+    resource "local_file" "inventory" {
+      filename = "${path.module}/inventory.ini"
+
+     content = templatefile("${path.module}/host.tftpl",
+        {
+          webservers  = yandex_compute_instance.web,
+          databases   = yandex_compute_instance.platform2,
+          storage     = yandex_compute_instance.storage
+        }
+      )
+    }
+    ```
+2.  host.tftpl
+    ```
+    [webservers]
+
+    %{~ for i in webservers ~}
+    ${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"]} fqdn=${i["fqdn"]}
+
+    %{~ endfor ~}
+
+    [databases]
+
+    %{~ for i in databases ~}
+    ${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"]} fqdn=${i["fqdn"]}
+
+    %{~ endfor ~}
+
+    [storage]
+    ${storage["name"]} ansible_host=${storage["network_interface"][0]["nat_ip_address"]} fqdn=${storage["fqdn"]}
+    ```
+3.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-4-1.png)
 ------
 
 ## Дополнительные задания (со звездочкой*)
@@ -107,6 +335,40 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
 ```
 Приложите скриншот вывода команды ```terrafrom output```.
 
+## Ответ на задание 5
+1.  output.tf
+    ```
+    output "vm" {
+      description = "Список всех виртуальных машин с именем, ID и FQDN"
+      value = concat(
+
+        [
+          for vm in yandex_compute_instance.web : {
+            name = vm.name
+            id   = vm.id
+            fqdn = vm.hostname
+          }
+        ],
+    
+        [
+          for key, vm in yandex_compute_instance.platform2 : {
+            name = vm.name
+            id   = vm.id
+            fqdn = vm.hostname
+          }
+        ],
+    
+        [
+          {
+            name = yandex_compute_instance.storage.name
+            id   = yandex_compute_instance.storage.id
+            fqdn = yandex_compute_instance.storage.hostname
+          }
+        ]
+      )
+    }   
+    ```
+2.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-5-1.png)
 ------
 
 ### Задание 6* (необязательное)
@@ -117,6 +379,72 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
 
 Для проверки работы уберите у ВМ внешние адреса(nat=false). Этот вариант используется при работе через bastion-сервер.
 Для зачёта предоставьте код вместе с основной частью задания.
+
+## Ответ на задание 6
+1.  ansible.tf
+    ```
+    resource "local_file" "inventory" {
+      filename = "${path.module}/inventory.ini"
+
+      content = templatefile("${path.module}/host.tftpl",
+        {
+          webservers  = yandex_compute_instance.web,
+          databases   = yandex_compute_instance.platform2,
+          storage     = yandex_compute_instance.storage
+        }
+      )
+    }
+
+    resource "null_resource" "web_hosts_provision" {
+      #Ждем создания инстанса
+      depends_on = [yandex_compute_instance.storage, local_file.inventory]
+  
+      #Добавление ПРИВАТНОГО ssh ключа в ssh-agent
+      provisioner "local-exec" {
+        command    = "eval $(ssh-agent) && cat /home/vlad/.ssh/id_ed25519 | ssh-add -"
+        on_failure = continue #Продолжить выполнение terraform pipeline в случае ошибок
+      }
+
+      #Запуск ansible-playbook
+      provisioner "local-exec" {
+        # without secrets
+        command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${abspath(path.module)}/inventory.ini ${abspath(path.module)}/test.yml"
+        on_failure  = continue #Продолжить выполнение terraform pipeline в случае ошибок
+        environment = { ANSIBLE_HOST_KEY_CHECKING = "False" }
+      }
+
+      #срабатывание триггера при изменении переменных
+      triggers = {
+        always_run      = "${timestamp()}" #всегда т.к. дата и время постоянно изменяются
+        always_run_uuid = "${uuid()}"
+        #playbook_src_hash = file("${abspath(path.module)}/test.yml") # при изменении содержимого playbook файла
+        #ssh_public_key    = var.public_key                           # при изменении переменной with ssh
+        #template_rendered = "${local_file.hosts_templatefile.content}" #при изменении inventory-template
+        #password_change = jsonencode( {for k,v in random_password.each: k=>v.result})
+      }
+    }
+    ```
+2. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-6-1.png)
+3.  host.tftpl
+    ```
+    [webservers]
+
+    %{~ for i in webservers ~}
+    ${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"] != "" ? i["network_interface"][0]["nat_ip_address"] : i["network_interface"][0]["ip_address"]} fqdn=${i["fqdn"]}
+
+    %{~ endfor ~}
+
+    [databases]
+
+    %{~ for i in databases ~}
+    ${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"] != "" ? i["network_interface"][0]["nat_ip_address"] : i["network_interface"][0]["ip_address"]} fqdn=${i["fqdn"]}
+
+    %{~ endfor ~}
+
+    [storage]
+    ${storage["name"]} ansible_host=${storage["network_interface"][0]["nat_ip_address"] != "" ? storage["network_interface"][0]["nat_ip_address"] : storage["network_interface"][0]["ip_address"]} fqdn=${storage["fqdn"]}
+    ```
+4.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-6-2.png)
 
 ### Правила приёма работы
 
@@ -163,6 +491,10 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
   ]
 }
 ```
+## Ответ на задание 7
+
+1.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-7-1.png)
+
 ### Задание 8* (необязательное)
 Идентифицируйте и устраните намеренно допущенную в tpl-шаблоне ошибку. Обратите внимание, что terraform сам сообщит на какой строке и в какой позиции ошибка!
 ```
@@ -172,10 +504,61 @@ ${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"] platform
 %{~ endfor ~}
 ```
 
+## Ответ на задание 8
+
+Исправленный вариант
+```
+[webservers]
+%{~ for i in webservers ~}
+${i["name"]} ansible_host=${i["network_interface"][0]["nat_ip_address"]} platform_id=${i["platform_id"]}
+%{~ endfor ~}
+
+```
+Закрывающая скобка "}" была перенесена с конца строки и поставлена после  `{i["network_interface"][0]["nat_ip_address"]`
+
 ### Задание 9* (необязательное)
 Напишите  terraform выражения, которые сформируют списки:
 1. ["rc01","rc02","rc03","rc04",rc05","rc06",rc07","rc08","rc09","rc10....."rc99"] те список от "rc01" до "rc99"
 2. ["rc01","rc02","rc03","rc04",rc05","rc06","rc11","rc12","rc13","rc14",rc15","rc16","rc19"....."rc96"] те список от "rc01" до "rc96", пропуская все номера, заканчивающиеся на "0","7", "8", "9", за исключением "rc19"
+
+## Ответ на задание 9
+
+1.  range.tf
+    ```
+    locals {
+      rc_list_01_to_99 = [
+        for i in range(1, 100) : format("rc%02d", i)
+      ]
+
+      rc_list_01_to_96_filtered = [
+        for i in range(1, 97) : format("rc%02d", i)
+        if (
+          i == 19
+          ||
+          (i % 10 != 0) &&
+          (i % 10 != 7) &&
+          (i % 10 != 8) &&
+          (i % 10 != 9)
+        )
+      ]
+    }
+    ```
+2.  output.tf
+    ```
+    output "rc_list_01_to_99" {
+      value = local.rc_list_01_to_99
+    }
+
+    output "rc_list_filtered" {
+      description = "Отфильтрованный список от rc01 до rc96"
+      value       = local.rc_list_01_to_96_filtered
+    }
+    ```
+
+## Ссылка на репозиторий с выполненой работой
+
+[Ссылка на конфигурацию Terraform](https://github.com/VN351/dev/tree/master/src)
+
 
 ### Критерии оценки
 
