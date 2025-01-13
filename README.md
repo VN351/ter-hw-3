@@ -31,7 +31,7 @@
 
 ## Ответ на задание 1
 
-1.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-1-1.png)
+1.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-1-1.png)
 
 ------
 
@@ -187,7 +187,7 @@ variable "each_vm" {
       ]
     }
     ```
-5. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-2-1.png)
+5. ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-2-1.png)
 
 ------
 
@@ -244,7 +244,7 @@ variable "each_vm" {
       allow_stopping_for_update = var.stop_vm.yes
     }
     ```
-2. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-3-1.png)
+2. ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-3-1.png)
 ------
 
 ### Задание 4
@@ -307,7 +307,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
     [storage]
     ${storage["name"]} ansible_host=${storage["network_interface"][0]["nat_ip_address"]} fqdn=${storage["fqdn"]}
     ```
-3.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-4-1.png)
+3.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-4-1.png)
 ------
 
 ## Дополнительные задания (со звездочкой*)
@@ -368,7 +368,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
       )
     }   
     ```
-2.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-5-1.png)
+2.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-5-1.png)
 ------
 
 ### Задание 6* (необязательное)
@@ -424,7 +424,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
       }
     }
     ```
-2. ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-6-1.png)
+2. ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-6-1.png)
 3.  host.tftpl
     ```
     [webservers]
@@ -444,7 +444,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
     [storage]
     ${storage["name"]} ansible_host=${storage["network_interface"][0]["nat_ip_address"] != "" ? storage["network_interface"][0]["nat_ip_address"] : storage["network_interface"][0]["ip_address"]} fqdn=${storage["fqdn"]}
     ```
-4.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-6-2.png)
+4.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-6-2.png)
 
 ### Правила приёма работы
 
@@ -493,7 +493,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
 ```
 ## Ответ на задание 7
 
-1.  ![alt text](https://github.com/VN351/ter_hw_02/raw/main/images/task-7-1.png)
+1.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-7-1.png)
 
 ### Задание 8* (необязательное)
 Идентифицируйте и устраните намеренно допущенную в tpl-шаблоне ошибку. Обратите внимание, что terraform сам сообщит на какой строке и в какой позиции ошибка!
