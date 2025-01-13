@@ -368,7 +368,7 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
       )
     }   
     ```
-2.  ![alt text](https://github.com/VN351/ter_hw_3/raw/main/images/task-5-1.png)
+2.  ![alt text](https://github.com/VN351/ter-hw-3/raw/main/images/task-5-1.png)
 ------
 
 ### Задание 6* (необязательное)
