@@ -308,6 +308,43 @@ storage ansible_host=<внешний ip-адрес> fqdn=<полное доме�
     ${storage["name"]} ansible_host=${storage["network_interface"][0]["nat_ip_address"]} fqdn=${storage["fqdn"]}
     ```
 3.  ![alt text](https://github.com/VN351/ter-hw-3/raw/main/images/task-4-1.png)
+
+## Ответ на задание 4 (исправленный)
+
+1.  ansible.tf
+    ```
+    resource "local_file" "inventory" {
+      filename = "${path.module}/inventory.ini"
+
+     content = templatefile("${path.module}/host.tftpl",
+        {
+          webservers  = yandex_compute_instance.web,
+          databases   = yandex_compute_instance.platform2,
+          storage    = [yandex_compute_instance.storage]
+        }
+      )
+    }
+    ```
+2.  host.tftpl
+    ```
+    [webservers]
+
+    %{ for i in webservers ~}
+    ${i.name} ansible_host=${i.network_interface[0].nat_ip_address != "" ? i.network_interface[0].nat_ip_address : i.network_interface[0].ip_address} fqdn=${i.fqdn}
+    %{ endfor ~}
+
+    [databases]
+    %{ for i in databases ~}
+    ${i.name} ansible_host=${i.network_interface[0].nat_ip_address != "" ? i.network_interface[0].nat_ip_address : i.network_interface[0].ip_address} fqdn=${i.fqdn}
+    %{ endfor ~}
+
+    [storage]
+    %{ for i in storage ~}
+    ${i.name} ansible_host=${i.network_interface[0].nat_ip_address != "" ? i.network_interface[0].nat_ip_address : i.network_interface[0].ip_address} fqdn=${i.fqdn}
+    %{ endfor ~}
+    ```
+3.  ![alt text](https://github.com/VN351/ter-hw-3/raw/main/images/task-4-1.png)
+
 ------
 
 ## Дополнительные задания (со звездочкой*)
